@@ -1,0 +1,6 @@
+node_modules/
+.millennium/
+dist/
+HubcapPlugin/
+*.zip
+npm-debug.log*

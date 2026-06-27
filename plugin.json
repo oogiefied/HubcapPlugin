@@ -1,0 +1,9 @@
+{
+    "$schema": "https://raw.githubusercontent.com/SteamClientHomebrew/Millennium/main/src/sys/plugin-schema.json",
+    "name": "HubcapPlugin",
+    "common_name": "Hubcap Plugin",
+    "description": "Adds a Steam store button that installs Hubcap Lua and manifest files using HubcapTool config.",
+    "author": "Oogiefied, GyomenRaza",
+    "backendType": "lua",
+    "webkitApiVersion": "2.0.0"
+}

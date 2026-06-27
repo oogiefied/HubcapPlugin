@@ -1,0 +1,7 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "types": ["@steambrew/webkit"]
+    },
+    "include": ["./index.tsx"]
+}
