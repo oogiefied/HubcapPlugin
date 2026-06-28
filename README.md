@@ -4,6 +4,8 @@ Millennium plugin that works with the current version of HubcapTool. I made it f
 
 Created by Oogiefied and GyomenRaza.
 
+Special thanks to Hubcap Community!
+
 ## Preview
 
 ### Download Lua and Hubcap Usage
