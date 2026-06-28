@@ -65,25 +65,9 @@ The Hubcap usage check only shows your daily limit count, like `23/50`.
 
 The plugin reads the Steam app ID from the current store page. If the page is DLC, it uses Steam appdetails to find the base game app ID first.
 
-Downloads call:
+It uses Hubcap's official API through your locally configured HubcapTool API key, checks whether a Lua package is available, downloads the package when requested, and copies the returned files into the correct HubcapTool/Steam locations.
 
-```text
-GET https://hubcapmanifest.com/api/v1/manifest/{app_id}
-```
-
-The returned ZIP is extracted and copied into the correct HubcapTool/Steam locations.
-
-Hubcap availability checks call:
-
-```text
-GET https://hubcapmanifest.com/api/v1/status/{app_id}
-```
-
-Hubcap usage checks call:
-
-```text
-GET https://hubcapmanifest.com/api/v1/user/stats
-```
+Temporary download/extract files are cleaned up after install.
 
 ## Install From Source
 
