@@ -14,7 +14,7 @@
     },
     "type": "module",
     "name": "HubcapPlugin",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Millennium plugin for downloading Hubcap Lua and manifest files from Steam app pages.",
     "main": "./frontend/index.jsx",
     "author": "Oogiefied",

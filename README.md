@@ -36,6 +36,7 @@ Special thanks to Hubcap Community!
 - Shows the `Download Lua` button in orange when Denuvo or anti-tamper is detected.
 - Shows the `Remove Lua` button in red when Lua is already installed.
 - Shows a `Go to Library` button after Lua is downloaded.
+- Shows a Library-side `Remove Lua` button for games that already have Lua installed.
 - Shows a Hubcap usage panel with username, API key expiry, daily usage count, progress bar, and loading spinner.
 - Refreshes Hubcap usage on page load, after download, and when clicked manually.
 
