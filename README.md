@@ -1,6 +1,6 @@
 # Hubcap Plugin
 
-Millennium plugin that works with the current version of HubcapTool. I made it for personal use, then decided to share it with the community.
+Millennium plugin that works with the current version of HubcapTool. I made it for personal use, then decided to share it with the community. It is meant to be minimalistic, less clutter and direct to the point.
 
 Created by Oogiefied and GyomenRaza.
 
