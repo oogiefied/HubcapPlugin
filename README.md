@@ -4,6 +4,24 @@ Millennium plugin that works with the current version of HubcapTool. I made it f
 
 Created by Oogiefied and GyomenRaza.
 
+## Preview
+
+### Download Lua and Hubcap Usage
+
+![Download Lua button with Hubcap usage](docs/screenshots/download-lua.png)
+
+### Remove Lua and Go to Library
+
+![Remove Lua and Go to Library buttons](docs/screenshots/remove-lua-go-to-library.png)
+
+### Denuvo / Anti-Tamper Warning
+
+![Denuvo warning on a Steam store page](docs/screenshots/denuvo-warning.png)
+
+### DLC Base Game Detection
+
+![DLC page using the base game app ID](docs/screenshots/dlc-base-game.png)
+
 ## Features
 
 - Adds a `Download Lua` / `Remove Lua` button on Steam store game pages.
