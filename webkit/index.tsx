@@ -37,7 +37,12 @@ const checkHubcapTool = callable<[Record<string, never>], string>('check_hubcap_
 const checkHubcapLimit = callable<[Record<string, never>], string>('check_hubcap_limit');
 
 const BUTTON_ID = 'hubcap-lua-download-button';
-const LIMIT_BUTTON_ID = 'hubcap-limit-check-button';
+const LIMIT_PANEL_ID = 'hubcap-limit-panel';
+const LIMIT_NAME_ID = 'hubcap-limit-name';
+const LIMIT_EXPIRY_ID = 'hubcap-limit-expiry';
+const LIMIT_USAGE_FILL_ID = 'hubcap-limit-usage-fill';
+const LIMIT_USAGE_ID = 'hubcap-limit-usage';
+const LIMIT_SPINNER_ID = 'hubcap-limit-spinner';
 const STATUS_ID = 'hubcap-lua-download-status';
 const BAR_ID = 'hubcap-lua-action-bar';
 const LEFT_GROUP_ID = 'hubcap-lua-left-actions';
@@ -47,6 +52,8 @@ const WARNING_ID = 'hubcap-denuvo-warning';
 
 const statusCache = new Map<string, { checkedAt: number; result: BackendResult }>();
 let limitRefreshInFlight = false;
+let buttonRefreshInFlight = false;
+let staticLimitDetailsLoaded = false;
 
 function getAppIdFromLocation(): string | null {
 	const match = window.location.pathname.match(/\/app\/(\d+)(?:\/|$)/);
@@ -114,8 +121,7 @@ function injectStyles() {
 	const style = document.createElement('style');
 	style.id = 'hubcap-lua-download-styles';
 	style.textContent = `
-		#${BUTTON_ID},
-		#${LIMIT_BUTTON_ID} {
+		#${BUTTON_ID} {
 			background: linear-gradient(180deg, #67c1f5 0%, #417a9b 100%);
 			border: 0;
 			border-radius: 2px;
@@ -129,8 +135,89 @@ function injectStyles() {
 			white-space: nowrap;
 		}
 
-		#${LIMIT_BUTTON_ID} {
-			min-width: 132px;
+		#${LIMIT_PANEL_ID} {
+			background: rgba(13, 27, 39, 0.48);
+			border: 1px solid rgba(103, 193, 245, 0.26);
+			border-radius: 3px;
+			box-shadow: 0 1px 8px rgba(0, 0, 0, 0.18);
+			color: #d6f4ff;
+			cursor: default;
+			font-family: Arial, Helvetica, sans-serif;
+			min-width: 190px;
+			padding: 7px 10px 8px;
+		}
+
+		#${LIMIT_PANEL_ID}:hover {
+			background: rgba(18, 38, 55, 0.58);
+			border-color: rgba(103, 193, 245, 0.42);
+		}
+
+		.hubcap-limit-row {
+			align-items: center;
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+		}
+
+		.hubcap-limit-name {
+			color: #ffffff;
+			font-size: 12px;
+			font-weight: 700;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.hubcap-limit-expiry {
+			color: #9fc9e0;
+			font-size: 11px;
+			white-space: nowrap;
+		}
+
+		.hubcap-limit-bar {
+			background: rgba(0, 0, 0, 0.26);
+			border-radius: 999px;
+			height: 4px;
+			margin: 6px 0;
+			overflow: hidden;
+			width: 100%;
+		}
+
+		#${LIMIT_USAGE_FILL_ID} {
+			background: linear-gradient(90deg, #a4d007 0%, #67c1f5 100%);
+			display: block;
+			height: 100%;
+			transition: width 180ms ease;
+			width: 0%;
+		}
+
+		.hubcap-limit-usage-row {
+			align-items: center;
+			color: #d6f4ff;
+			display: flex;
+			font-size: 12px;
+			gap: 6px;
+			justify-content: flex-end;
+			white-space: nowrap;
+		}
+
+		#${LIMIT_USAGE_ID} {
+			color: #ffffff;
+			font-weight: 700;
+		}
+
+		#${LIMIT_SPINNER_ID} {
+			animation: hubcap-spin 0.8s linear infinite;
+			border: 2px solid rgba(214, 244, 255, 0.28);
+			border-top-color: #d6f4ff;
+			border-radius: 50%;
+			display: none;
+			height: 10px;
+			width: 10px;
+		}
+
+		#${LIMIT_SPINNER_ID}[data-visible="true"] {
+			display: inline-flex;
 		}
 
 		#${LIBRARY_BUTTON_ID} {
@@ -185,14 +272,36 @@ function injectStyles() {
 			margin-left: auto;
 		}
 
-		#${BUTTON_ID}:hover,
-		#${LIMIT_BUTTON_ID}:hover {
+		#${BUTTON_ID}:hover {
 			background: linear-gradient(180deg, #8ed9ff 0%, #4f9ec8 100%);
 			color: #fff;
 		}
 
-		#${BUTTON_ID}:disabled,
-		#${LIMIT_BUTTON_ID}:disabled {
+		#${BUTTON_ID}[data-hubcap-state="download"][data-denuvo="true"] {
+			background: linear-gradient(180deg, #f6a23a 0%, #b85f14 100%);
+			color: #fff5e6;
+			filter: none;
+			opacity: 1;
+		}
+
+		#${BUTTON_ID}[data-hubcap-state="download"][data-denuvo="true"]:hover {
+			background: linear-gradient(180deg, #ffbd5c 0%, #d87416 100%);
+			color: #ffffff;
+		}
+
+		#${BUTTON_ID}[data-hubcap-state="remove"] {
+			background: linear-gradient(180deg, #d94b3f 0%, #8f241d 100%);
+			color: #fff1ef;
+			filter: none;
+			opacity: 1;
+		}
+
+		#${BUTTON_ID}[data-hubcap-state="remove"]:hover {
+			background: linear-gradient(180deg, #f06555 0%, #ad2e24 100%);
+			color: #ffffff;
+		}
+
+		#${BUTTON_ID}:disabled {
 			cursor: default;
 			filter: grayscale(0.35);
 			opacity: 0.72;
@@ -296,12 +405,21 @@ function hasDenuvoWarning(): boolean {
 
 function refreshDenuvoWarning() {
 	const warning = document.getElementById(WARNING_ID);
-	if (!warning) return;
+	const button = document.getElementById(BUTTON_ID);
+	if (!warning) {
+		button?.removeAttribute('data-denuvo');
+		return;
+	}
 
 	const detected = hasDenuvoWarning();
 	warning.dataset.visible = detected ? 'true' : 'false';
 	warning.textContent = detected ? 'Warning: Denuvo / anti-tamper detected' : '';
 	warning.title = 'Steam page mentions Denuvo or anti-tamper. Download is still allowed.';
+	if (detected) {
+		button?.setAttribute('data-denuvo', 'true');
+	} else {
+		button?.removeAttribute('data-denuvo');
+	}
 }
 
 async function goToLibrary() {
@@ -315,14 +433,15 @@ async function goToLibrary() {
 }
 
 async function refreshHubcapLimit(options: { silent?: boolean } = {}) {
-	const button = document.getElementById(LIMIT_BUTTON_ID) as HTMLButtonElement | null;
-	if (!button || limitRefreshInFlight) return;
+	const panel = document.getElementById(LIMIT_PANEL_ID);
+	const usageEl = document.getElementById(LIMIT_USAGE_ID);
+	const spinner = document.getElementById(LIMIT_SPINNER_ID);
+	if (!panel || !usageEl || limitRefreshInFlight) return;
 
-	const previousText = button.textContent || 'Check Hubcap Limit';
 	limitRefreshInFlight = true;
-	button.disabled = true;
-	if (!options.silent) {
-		button.textContent = 'Checking...';
+	spinner?.setAttribute('data-visible', 'true');
+	if (!options.silent || usageEl.textContent === '--/--') {
+		usageEl.textContent = '--/--';
 	}
 
 	try {
@@ -337,23 +456,16 @@ async function refreshHubcapLimit(options: { silent?: boolean } = {}) {
 			throw new Error('Hubcap usage response was missing daily usage.');
 		}
 
-		button.textContent = `${usage}/${limit}`;
-		const expiryDays = getDaysUntil(result.apiKeyExpiresAt);
-		button.title = [
-			result.username ? `Hubcap user: ${result.username}` : '',
-			`Daily usage: ${usage}/${limit}`,
-			expiryDays !== null ? `API key expires in ${expiryDays} day${expiryDays === 1 ? '' : 's'}` : '',
-		].filter(Boolean).join('\n');
+		usageEl.textContent = `${usage}/${limit}`;
+		updateUsageBar(usage, limit);
+		updateStaticLimitDetails(result);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		button.textContent = 'Limit Error';
-		button.title = message;
+		usageEl.textContent = 'Limit Error';
+		panel.title = message;
 		setTemporaryStatus(message, 'error');
-		window.setTimeout(() => {
-			button.textContent = previousText;
-		}, 4000);
 	} finally {
-		button.disabled = false;
+		spinner?.setAttribute('data-visible', 'false');
 		limitRefreshInFlight = false;
 	}
 }
@@ -371,6 +483,37 @@ function getDaysUntil(dateValue?: string): number | null {
 
 	const millisecondsPerDay = 24 * 60 * 60 * 1000;
 	return Math.max(0, Math.ceil((expiresTime - Date.now()) / millisecondsPerDay));
+}
+
+function updateStaticLimitDetails(result: BackendResult) {
+	const panel = document.getElementById(LIMIT_PANEL_ID);
+	const nameEl = document.getElementById(LIMIT_NAME_ID);
+	const expiryEl = document.getElementById(LIMIT_EXPIRY_ID);
+	const usageEl = document.getElementById(LIMIT_USAGE_ID);
+	if (!panel || !nameEl || !expiryEl || !usageEl) return;
+
+	const expiryDays = getDaysUntil(result.apiKeyExpiresAt);
+
+	if (!staticLimitDetailsLoaded) {
+		nameEl.textContent = result.username || 'Hubcap';
+		expiryEl.textContent = expiryDays !== null ? `Expires in ${expiryDays}d` : 'Expires --';
+		staticLimitDetailsLoaded = true;
+	}
+
+	panel.title = [
+		result.username ? `Hubcap user: ${result.username}` : '',
+		`Daily usage: ${usageEl.textContent || '--/--'}`,
+		expiryDays !== null ? `API key expires in ${expiryDays} day${expiryDays === 1 ? '' : 's'}` : '',
+	].filter(Boolean).join('\n');
+}
+
+function updateUsageBar(usage: number, limit: number) {
+	const fillEl = document.getElementById(LIMIT_USAGE_FILL_ID) as HTMLElement | null;
+	if (!fillEl) return;
+
+	const percent = limit > 0 ? Math.max(0, Math.min(100, Math.round((usage / limit) * 100))) : 0;
+	fillEl.style.width = `${percent}%`;
+	fillEl.title = `Daily usage: ${percent}%`;
 }
 
 async function handleClick(button: HTMLButtonElement) {
@@ -433,10 +576,14 @@ async function getCachedLuaStatus(appId: string): Promise<BackendResult> {
 
 async function refreshButtonState() {
 	const button = document.getElementById(BUTTON_ID) as HTMLButtonElement | null;
-	if (!button || (button.disabled && !['checking', 'unavailable'].includes(button.dataset.hubcapState ?? ''))) return;
+	if (!button || buttonRefreshInFlight || (button.disabled && !['checking', 'unavailable'].includes(button.dataset.hubcapState ?? ''))) return;
 
+	buttonRefreshInFlight = true;
 	const resolved = await resolveAppId();
-	if (!resolved) return;
+	if (!resolved) {
+		buttonRefreshInFlight = false;
+		return;
+	}
 
 	try {
 		const luaResult = parseBackendResult(await checkLua({ app_id: resolved.appId }));
@@ -496,6 +643,8 @@ async function refreshButtonState() {
 			libraryButton.dataset.visible = 'false';
 		}
 		console.warn('[HubcapPlugin] Hubcap state check failed.', error);
+	} finally {
+		buttonRefreshInFlight = false;
 	}
 }
 
@@ -546,20 +695,61 @@ function injectButton() {
 	warning.id = WARNING_ID;
 	warning.dataset.visible = 'false';
 
-	const limitButton = document.createElement('button');
-	limitButton.id = LIMIT_BUTTON_ID;
-	limitButton.type = 'button';
-	limitButton.textContent = 'Checking Limit...';
-	limitButton.title = 'Check daily Hubcap API usage.';
-	limitButton.addEventListener('click', () => {
+	const limitPanel = document.createElement('div');
+	limitPanel.id = LIMIT_PANEL_ID;
+	limitPanel.title = 'Hubcap usage details';
+	limitPanel.addEventListener('click', () => {
 		void handleLimitClick();
 	});
+
+	const limitTopRow = document.createElement('div');
+	limitTopRow.className = 'hubcap-limit-row';
+
+	const limitName = document.createElement('span');
+	limitName.id = LIMIT_NAME_ID;
+	limitName.className = 'hubcap-limit-name';
+	limitName.textContent = 'Hubcap';
+
+	const limitExpiry = document.createElement('span');
+	limitExpiry.id = LIMIT_EXPIRY_ID;
+	limitExpiry.className = 'hubcap-limit-expiry';
+	limitExpiry.textContent = 'Expires --';
+
+	const limitBar = document.createElement('div');
+	limitBar.className = 'hubcap-limit-bar';
+
+	const limitFill = document.createElement('span');
+	limitFill.id = LIMIT_USAGE_FILL_ID;
+	limitBar.appendChild(limitFill);
+
+	const limitUsageRow = document.createElement('div');
+	limitUsageRow.className = 'hubcap-limit-usage-row';
+
+	const limitUsageLabel = document.createElement('span');
+	limitUsageLabel.textContent = 'Daily Usage:';
+
+	const limitUsage = document.createElement('span');
+	limitUsage.id = LIMIT_USAGE_ID;
+	limitUsage.textContent = '--/--';
+
+	const limitSpinner = document.createElement('span');
+	limitSpinner.id = LIMIT_SPINNER_ID;
+	limitSpinner.dataset.visible = 'false';
+
+	limitTopRow.appendChild(limitName);
+	limitTopRow.appendChild(limitExpiry);
+	limitUsageRow.appendChild(limitUsageLabel);
+	limitUsageRow.appendChild(limitUsage);
+	limitUsageRow.appendChild(limitSpinner);
+	limitPanel.appendChild(limitTopRow);
+	limitPanel.appendChild(limitBar);
+	limitPanel.appendChild(limitUsageRow);
 
 	leftGroup.appendChild(button);
 	leftGroup.appendChild(libraryButton);
 	leftGroup.appendChild(status);
 	leftGroup.appendChild(warning);
-	rightGroup.appendChild(limitButton);
+	rightGroup.appendChild(limitPanel);
 	bar.appendChild(leftGroup);
 	bar.appendChild(rightGroup);
 
@@ -592,9 +782,11 @@ export default async function WebkitMain() {
 	setInterval(() => {
 		if (window.location.href !== lastUrl) {
 			lastUrl = window.location.href;
+			statusCache.clear();
 			setTimeout(() => {
 				injectButton();
 				void refreshButtonState();
+				void refreshHubcapLimit({ silent: true });
 				refreshDenuvoWarning();
 			}, 250);
 			return;
@@ -602,9 +794,4 @@ export default async function WebkitMain() {
 		injectButton();
 		refreshDenuvoWarning();
 	}, 1000);
-
-	setInterval(() => {
-		void refreshButtonState();
-		refreshDenuvoWarning();
-	}, 2500);
 }

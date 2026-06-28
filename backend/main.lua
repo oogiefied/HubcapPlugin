@@ -199,7 +199,6 @@ local function run_powershell(args)
         cmd_quote(script) .. " " .. args .. " > " .. cmd_quote(output_path) .. " 2> " .. cmd_quote(error_path)
     local command = 'cmd.exe /S /C "' .. cmd_escape(powershell_command) .. '"'
 
-    logger:info("Running Hubcap Plugin command")
     local ok, reason = run_hidden_command(command)
 
     local output = ""

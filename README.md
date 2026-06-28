@@ -8,17 +8,17 @@ Special thanks to Hubcap Community!
 
 ## Preview
 
-### Download Lua and Hubcap Usage
+### Download Lua and Hubcap Usage Panel
 
-![Download Lua button with Hubcap usage](docs/screenshots/download-lua.png)
+![Download Lua button with Hubcap usage panel](docs/screenshots/hp_usage_menu.png)
 
 ### Remove Lua and Go to Library
 
-![Remove Lua and Go to Library buttons](docs/screenshots/remove-lua-go-to-library.png)
+![Red Remove Lua button and Go to Library button](docs/screenshots/hp_red_remove.png)
 
 ### Denuvo / Anti-Tamper Warning
 
-![Denuvo warning on a Steam store page](docs/screenshots/denuvo-warning.png)
+![Orange Download Lua button with Denuvo warning](docs/screenshots/hp_orange_denuvo.png)
 
 ### DLC Base Game Detection
 
@@ -33,8 +33,10 @@ Special thanks to Hubcap Community!
 - Automatically detects DLC pages and uses the base game app ID.
 - Shows the base game name when a DLC page is detected.
 - Shows a warning when the Steam page mentions Denuvo or anti-tamper.
+- Shows the `Download Lua` button in orange when Denuvo or anti-tamper is detected.
+- Shows the `Remove Lua` button in red when Lua is already installed.
 - Shows a `Go to Library` button after Lua is downloaded.
-- Shows your Hubcap daily usage limit on the store page, like `23/50`.
+- Shows a Hubcap usage panel with username, API key expiry, daily usage count, progress bar, and loading spinner.
 - Refreshes Hubcap usage on page load, after download, and when clicked manually.
 
 ## Requirements
